@@ -1,0 +1,57 @@
+frr version 10.4.1_git
+frr defaults traditional
+hostname r3
+!
+ip prefix-list my_networks seq 5 permit 192.168.2.0/24
+!
+route-map to-peer permit 10
+ match ip address prefix-list my_networks
+exit
+!
+route-map allow_all permit 10
+exit
+!
+ip route 192.168.2.0/24 blackhole 254
+!
+interface eth1
+ description to H3
+ ip address 192.168.2.65/26
+ ip ospf area 0
+ ip ospf passive
+exit
+!
+interface eth2
+ description to R2
+ ip address 192.168.2.138/30
+ ip ospf area 0
+exit
+!
+interface eth3
+ description to AS65200 - R4
+ ip address 192.168.2.133/30
+exit
+!
+interface lo
+ ip address 192.168.2.201/32
+ ip ospf area 0
+exit
+!
+router bgp 65100
+ bgp router-id 192.168.2.201
+ neighbor 192.168.2.134 remote-as 65200
+ neighbor 192.168.2.134 description AS65200-R4
+ neighbor 192.168.2.200 remote-as 65100
+ neighbor 192.168.2.200 description R2
+ neighbor 192.168.2.200 update-source lo
+ !
+ address-family ipv4 unicast
+  network 192.168.2.0/24
+  neighbor 192.168.2.134 route-map allow_all in
+  neighbor 192.168.2.134 route-map to-peer out
+ exit-address-family
+exit
+!
+router ospf
+ ospf router-id 192.168.2.201
+exit
+!

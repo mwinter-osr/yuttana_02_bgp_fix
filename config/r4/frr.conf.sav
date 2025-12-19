@@ -1,0 +1,41 @@
+frr version 10.4.1_git
+frr defaults traditional
+hostname r4
+!
+ip prefix-list my_networks seq 5 permit 192.168.3.0/24
+!
+route-map to-peer permit 10
+ match ip address prefix-list my_networks
+exit
+!
+route-map allow_all permit 10
+exit
+!
+ip route 192.168.3.0/24 blackhole 254
+!
+interface eth1
+ description to H4
+ ip address 192.168.3.1/26
+exit
+!
+interface eth2
+ description to AS65100 - R3
+ ip address 192.168.2.134/30
+exit
+!
+interface lo
+ ip address 192.168.3.200/32
+exit
+!
+router bgp 65200
+ bgp router-id 192.168.3.200
+ neighbor 192.168.2.133 remote-as 65100
+ neighbor 192.168.2.133 description AS65100-R3
+ !
+ address-family ipv4 unicast
+  network 192.168.3.0/24
+  neighbor 192.168.2.133 route-map allow_all in
+  neighbor 192.168.2.133 route-map to-peer out
+ exit-address-family
+exit
+!
